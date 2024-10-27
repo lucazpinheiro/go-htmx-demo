@@ -1,0 +1,16 @@
+<ul id="tasks">
+    {{range $index, $task := .Tasks}}
+    <li class="py-4">
+        <div class="flex items-center">
+            <input id="todo{{$index}}" name="todo{{$index}}" type="checkbox" {{if $task.Done}}checked{{end}}
+                   class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                   hx-put="/task/{{$task.ID}}"
+                   hx-target="#tasks"
+                   hx-trigger="change">
+            <label for="todo{{$index}}" class="ml-3 block text-gray-900">
+                <span class="text-lg font-medium">{{$task.Description}}</span>
+            </label>
+        </div>
+    </li>
+    {{end}}
+</ul>
