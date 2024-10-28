@@ -1,38 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/lucazpinheiro/go-plus-htmx-demo/internal"
 
 	"github.com/gofiber/template/html/v2"
 )
-
-type Task struct {
-	ID          int    `json:"id"`
-	Description string `json:"description"`
-	Done        bool   `json:"done"`
-}
-
-var tasks = []Task{
-	{
-		ID:          0,
-		Description: "A",
-		Done:        false,
-	},
-	{
-		ID:          1,
-		Description: "B",
-		Done:        false,
-	},
-	{
-		ID:          2,
-		Description: "C",
-		Done:        false,
-	},
-}
 
 func main() {
 	engine := html.New("./views", ".html")
@@ -42,6 +18,8 @@ func main() {
 	})
 
 	app.Use(logger.New())
+
+	tasksRepo := internal.NewTaskRepository()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Render("index", fiber.Map{
@@ -53,7 +31,7 @@ func main() {
 	})
 	app.Get("/task", func(c *fiber.Ctx) error {
 		return c.Render("ul", fiber.Map{
-			"Tasks": tasks,
+			"Tasks": tasksRepo.ListTask(),
 		})
 	})
 	app.Put("/task/:id", func(c *fiber.Ctx) error {
@@ -61,14 +39,10 @@ func main() {
 		if err != nil {
 			return c.Status(400).SendString("ID inválido")
 		}
-		fmt.Println(id)
-		for i, task := range tasks {
-			if task.ID == id {
-				// Atualiza o estado da tarefa com base no checkbox
-				tasks[i].Done = !task.Done
-				break
-			}
-		}
+
+		tasksRepo.FlipTaskStatus(id)
+
+		tasks := tasksRepo.ListTask()
 
 		return c.Render("ul", fiber.Map{
 			"Tasks": tasks,
@@ -78,21 +52,12 @@ func main() {
 	app.Post("/task", func(c *fiber.Ctx) error {
 		description := c.FormValue("task-description")
 
-		newTask := Task{
-			Description: description,
-		}
-
-		setTaskID(&newTask)
-		tasks = append(tasks, newTask)
+		tasksRepo.CreateTask(description)
 
 		return c.Render("ul", fiber.Map{
-			"Tasks": tasks,
+			"Tasks": tasksRepo.ListTask(),
 		})
 	})
 
 	log.Fatal(app.Listen(":3000"))
-}
-
-func setTaskID(task *Task) {
-	task.ID = len(tasks)
 }
